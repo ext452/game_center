@@ -15,22 +15,51 @@ const GC_SUBMIT_SCORE = "gcSubmitScore";
 const GC_GET_SCORE = "gcGetScore";
 const GC_SUBMIT_ACHIV = "gcSubmitAchiv";
 const GC_SHOW_LEADERBOARD = "gcShowLeadBoard";
+const GC_SHOW_ACHIEVBOARD = "gcShowAchievBoard";
+
+class DataHolder<T> {
+  T data;
+
+  DataHolder(this.data);
+
+  getData() {
+    return data;
+  }
+
+  setData(data) {
+    this.data = data;
+  }
+}
 
 class GameServices {
   static const MethodChannel _channel = const MethodChannel('game_services');
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
-  }
-
-  static Future<String> get gcLogin async {
-    final String result = await _channel.invokeMethod(GC_LOGIN);
+  static Future<bool> get gcSignIn async {
+    final bool result = await _channel.invokeMethod(GC_LOGIN);
     return result;
   }
 
-  static Future<String> get showLeadBoard async {
-    final String result = await _channel.invokeMethod(GC_SHOW_LEADERBOARD);
+  static Future<String> showLeadBoard(String leaderBoardID) async {
+    final String result = await _channel.invokeMethod(GC_SHOW_LEADERBOARD, leaderBoardID);
+    return Future.error("error");
+  }
+
+  static Future<bool> showAchieventBoard() async {
+    final bool result = await _channel.invokeMethod(GC_SHOW_ACHIEVBOARD);
     return result;
+  }
+
+  static Future<bool> openAchievement(String achivKey) async {
+    final bool result = await _channel.invokeMethod(GC_SUBMIT_ACHIV, achivKey);
+    return result;
+  }
+
+  static Future<bool> reportScore(String leadBoardId, String score) async {
+    final bool result = await _channel.invokeMethod(GC_SUBMIT_SCORE, [leadBoardId, score]);
+    return result;
+  }
+
+  static submitScore(int score) async {
+    _channel.invokeMethod(GC_SUBMIT_SCORE, score);
   }
 }

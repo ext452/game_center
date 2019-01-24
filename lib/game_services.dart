@@ -54,8 +54,12 @@ class GameServices {
     return result;
   }
 
-  static Future<bool> reportScore(String leadBoardId, String score) async {
-    final bool result = await _channel.invokeMethod(GC_SUBMIT_SCORE, [leadBoardId, score]);
+  ///Submit score to GameCenter by leadBoardId
+  ///It takes [params] as Map - {[leadBoardId], [score]}
+  ///
+  ///Returns `true` if operation was succesfull
+  static Future<bool> reportScore(Map<String, int> params) async {
+    final bool result = await _channel.invokeMethod(GC_SUBMIT_SCORE, params);
     return result;
   }
 

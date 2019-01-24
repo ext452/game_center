@@ -37,16 +37,14 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         result(GC_GET_SCORE)
         
     case GC_SUBMIT_SCORE:
-        let args = call.arguments as? NSArray
+        let args = call.arguments as? NSDictionary
         
-        let score = Int(args?[1] as! String)
-        let leaderBoardId = args?[0] as? String
+        let leaderBoardId = args?.allKeys[0] as! String
+        let score = args?.value(forKey: leaderBoardId) as! Int
         
-        if score != nil && leaderBoardId != nil {
-            result(saveHighScore(leadBpardId: leaderBoardId!, score: score!))
-        } else {
-            result(false)
-        }
+        result(saveHighScore(leadBpardId: leaderBoardId, score: score))
+        
+        result(false)
         
     
     case GC_SHOW_LEADERBOARD:
@@ -184,7 +182,7 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         localPlayer.saveGameData(data, withName: fileName){
             (saveGame: GKSavedGame?, error: Error?) -> Void in
             if error != nil {
-                print("Error saving: \(error)")
+                print("Error saving: \(String(describing: error))")
             } else {
                 print("Save game success!")
                 

@@ -19,48 +19,105 @@ const GC_GET_SCORE = "gcGetScore";
 const GC_SUBMIT_ACHIV = "gcSubmitAchiv";
 const GC_SHOW_LEADERBOARD = "gcShowLeadBoard";
 const GC_SHOW_ACHIEVBOARD = "gcShowAchievBoard";
+const GC_SAVE_GAME_DATA = "gcSaveGameData";
+const GC_LOAD_GAME_DATA = "gcLoadGameData";
 
+const ERROR = 'ERROR';
 
 class GameServices {
   static const MethodChannel _channel = const MethodChannel('game_services');
 
-
   ///Login into Game Center
   ///
-  ///Return `true` if operation was successful
+  ///Return `true` if operation was successful or Throw `Future.error`
   static Future<bool> get gcSignIn async {
     final bool result = await _channel.invokeMethod(GC_LOGIN);
-    return result;
+
+    if(result == true) {
+      return true;
+    } else {
+      return Future.error(false);
+    }
   }
 
   ///Show native leader board passing [leaderBoardID]
   ///
-  ///Return `true` if operation was successful
-  static Future<String> showLeadBoard(String leaderBoardID) async {
-    final String result = await _channel.invokeMethod(GC_SHOW_LEADERBOARD, leaderBoardID);
-    return Future.error("error");
+  ///Return `true` if operation was successful or Throw `Future.error`
+  static Future<bool> showLeadBoard(String leaderBoardID) async {
+    final bool result =
+        await _channel.invokeMethod(GC_SHOW_LEADERBOARD, leaderBoardID);
+
+    if(result == true) {
+      return true;
+    } else {
+      return Future.error(false);
+    }
   }
 
   ///Just show native achievement board
+  ///
+  //////Return `true` if operation was successful or Throw `Future.error`
   static Future<bool> showAchieventBoard() async {
     final bool result = await _channel.invokeMethod(GC_SHOW_ACHIEVBOARD);
-    return result;
+
+    if(result == true) {
+      return true;
+    } else {
+      return Future.error(false);
+    }
   }
 
   ///Open achievement by [achivKey]
   ///
-  ///Return `true` if operation was successful
+  ///Return `true` if operation was successful or Throw `Future.error`
   static Future<bool> openAchievement(String achivKey) async {
     final bool result = await _channel.invokeMethod(GC_SUBMIT_ACHIV, achivKey);
-    return result;
+
+    if(result == true) {
+      return true;
+    } else {
+      return Future.error(false);
+    }
   }
 
   ///Submit score to GameCenter by leadBoardId
   ///It takes [params] as Map - {[leadBoardId], [score]}
   ///
-  ///Returns `true` if operation was successful
+  ///Returns `true` if operation was successful or Throw `Future.error`
   static Future<bool> reportScore(Map<String, int> params) async {
     final bool result = await _channel.invokeMethod(GC_SUBMIT_SCORE, params);
-    return result;
+    
+    if(result == true) {
+      return true;
+    } else {
+      return Future.error(false);
+    }
+  }
+
+  ///Save game process to GameCenter passing [data] and [fileName] as `List`
+  ///
+  ///Return `true` if process was successful or Throw `Future.error`
+  static Future<bool> saveData(String data, String fileName) async {
+    final bool result = await _channel.invokeMethod(GC_SAVE_GAME_DATA, [data, fileName]);
+
+    if(result == true) {
+      return true;
+    } else {
+      return Future.error(false);
+    }
+  }
+
+  ///Load last saved game proccess from GameCenter
+  ///
+  ///Return `String` data or `ERROR` if any error is occurred
+  ///or Throw `Future.error` with `ERROR` message
+  static Future<String> loadData() async {
+    final String result = await _channel.invokeMethod(GC_LOAD_GAME_DATA);
+
+    if(result != ERROR) {
+      return result;
+    } else {
+      return Future.error(ERROR);
+    }
   }
 }

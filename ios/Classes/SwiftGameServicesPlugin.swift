@@ -10,7 +10,9 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
     let GC_SUBMIT_ACHIV = "gcSubmitAchiv"
     let GC_SHOW_LEADERBOARD = "gcShowLeadBoard"
     let GC_SHOW_ACHIEVBOARD = "gcShowAchievBoard"
-    let ERROR = "gcError"
+    let GC_SAVE_GAME_DATA = "gcSaveGameData"
+    let GC_LOAD_GAME_DATA = "gcLoadGameData"
+    let ERROR = "ERROR"
     
     /* Variables */
     var gcEnabled = Bool() // Check if the user has Game Center enabled
@@ -63,8 +65,24 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         let achivKey = call.arguments as? String
         result(achivKey)
         
+    case GC_SAVE_GAME_DATA:
+        let args = call.arguments as? NSArray
+        
+        if args != nil && args?.count == 2 {
+            let data = args?[0] as! String
+            let fileName = args?[1] as! String
+            
+            result(saveGameData(saveData: data, fileName: fileName))
+        } else {
+            result(false)
+        }
+        
+    case GC_LOAD_GAME_DATA:
+        result(loadGameData())
+        
+        
     default:
-        result("ERROR")
+        result(self.ERROR)
     }
   }
 
@@ -166,7 +184,7 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         return result
     }
     
-    public static func Save(saveData: String, fileName: String) -> Bool {
+    func saveGameData(saveData: String, fileName: String) -> Bool {
         var result = false
         
         if !GKLocalPlayer.localPlayer().isAuthenticated {
@@ -193,7 +211,7 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         return result
     }
     
-    func Load() -> String {
+    func loadGameData() -> String {
         var result = self.ERROR
         
         let localPlayer = GKLocalPlayer.localPlayer()
@@ -232,7 +250,7 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         return result
     }
     
-    public static func Delete(fileName: String) -> Bool {
+    func deleteGameData(fileName: String) -> Bool {
         var result = false
         
         let localPlayer = GKLocalPlayer.localPlayer()

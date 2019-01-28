@@ -63,7 +63,7 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         
     case GC_SUBMIT_ACHIV:
         let achivKey = call.arguments as? String
-        result(achivKey)
+        result(reportAchievement(achievement: achivKey!))
         
     case GC_SAVE_GAME_DATA:
         let args = call.arguments as? NSArray
@@ -72,13 +72,18 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
             let data = args?[0] as! String
             let fileName = args?[1] as! String
             
-            result(saveGameData(saveData: data, fileName: fileName))
+            
+            saveGameData(saveData: data, fileName: fileName) { (output) in
+                result(output)
+            }
         } else {
-            result(false)
+            result("arguments error")
         }
         
     case GC_LOAD_GAME_DATA:
-        result(loadGameData())
+        loadGameData() { (output) in
+            result(output)
+        }
         
         
     default:
@@ -95,7 +100,7 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
             if error != nil {
                 //error
             } else if view != nil {
-                self.present(view!, animated: true, completion: nil)
+                UIApplication.shared.keyWindow?.rootViewController?.present(view!, animated: true, completion: nil)
                 result = true
             }
             else {
@@ -128,13 +133,11 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
     func showReaderBoard(leadBoardId: String) -> Bool {
         
         if GKLocalPlayer.localPlayer().isAuthenticated {
-            let viewController = self.view.window?.rootViewController
             let gcVC = GKGameCenterViewController()
             
             gcVC.leaderboardIdentifier = leadBoardId
             gcVC.gameCenterDelegate = self
             gcVC.viewState = GKGameCenterViewControllerState.leaderboards
-            viewController?.present(gcVC, animated: true, completion: nil)
             
             UIApplication.shared.keyWindow?.rootViewController?.present(gcVC, animated: true, completion: nil)
             
@@ -148,12 +151,10 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
     
     func showAchivBoard() -> Bool {
         if GKLocalPlayer.localPlayer().isAuthenticated {
-            let viewController = self.view.window?.rootViewController
             let gcVC = GKGameCenterViewController()
             
             gcVC.gameCenterDelegate = self
             gcVC.viewState = GKGameCenterViewControllerState.achievements
-            viewController?.present(gcVC, animated: true, completion: nil)
             
             UIApplication.shared.keyWindow?.rootViewController?.present(gcVC, animated: true, completion: nil)
             
@@ -184,70 +185,78 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         return result
     }
     
-    func saveGameData(saveData: String, fileName: String) -> Bool {
-        var result = false
-        
-        if !GKLocalPlayer.localPlayer().isAuthenticated {
-            return false
-        }
-        
-        print("save data: \(saveData)")
-        guard let data = saveData.data(using: String.Encoding.utf8) else {
-            return false
-        }
-        
-        let localPlayer = GKLocalPlayer.localPlayer()
-        localPlayer.saveGameData(data, withName: fileName){
-            (saveGame: GKSavedGame?, error: Error?) -> Void in
-            if error != nil {
-                print("Error saving: \(String(describing: error))")
-            } else {
-                print("Save game success!")
-                
-                result = true
+    func saveGameData(saveData: String, fileName: String, completion:@escaping (String) -> Void) {
+        if GKLocalPlayer.localPlayer().isAuthenticated {
+            guard let data = saveData.data(using: String.Encoding.utf8) else {
+                completion("encoding error")
+                return
             }
+            
+            let localPlayer = GKLocalPlayer.localPlayer()
+            localPlayer.saveGameData(data, withName: fileName){
+                (saveGame: GKSavedGame?, error: Error?) -> Void in
+                if error != nil {
+                    print("Error saving: \(String(describing: error))")
+                    
+                    completion("Error saving: \(String(describing: error))")
+                } else {
+                    print("Save game success!")
+                    
+                    completion("true")
+                }
+            }
+        } else {
+            completion("Not authenticated!")
         }
         
-        return result
     }
     
-    func loadGameData() -> String {
+    func loadGameData(completion:@escaping (String) -> Void) {
         var result = self.ERROR
         
         let localPlayer = GKLocalPlayer.localPlayer()
         
-        if !localPlayer.isAuthenticated {
-            return self.ERROR
-        }
-        
-        localPlayer.fetchSavedGames() {
-            (saveGames: [GKSavedGame]?, error: Error?) -> Void in
-            if error != nil {
-                print("fetch saving error: \(String(describing: error))")
-                //error
-            } else {
-                print("game save lenth: \(String(describing: saveGames?.count))")
-                guard (saveGames?.count)! > 0 else {
-                    return
-                }
-                let save = saveGames?.first
-                save?.loadData() {
-                    (data: Data?, error: Error?) -> Void in
-                    if error != nil {
-                        print("Error load data: \(String(describing: error))")
-                    } else {
-                        guard let dataString = String(data: data!, encoding: .utf8) else {
-                            return
+        if localPlayer.isAuthenticated {
+            localPlayer.fetchSavedGames() {
+                (saveGames: [GKSavedGame]?, error: Error?) -> Void in
+                if error != nil {
+                    print("fetch saving error: \(String(describing: error))")
+                    result = String(describing: error)
+                    
+                    completion(result)
+                    //error
+                } else {
+                    print("game save lenth: \(String(describing: saveGames?.count))")
+                    guard (saveGames?.count)! > 0 else {
+                        result = "SAVE LENTH 0"
+                        completion(result)
+                        return
+                    }
+                    let save = saveGames?.first
+                    save?.loadData() {
+                        (data: Data?, error: Error?) -> Void in
+                        if error != nil {
+                            print("Error load data: \(String(describing: error))")
+                            result = String(describing: error)
+                            
+                            completion(result)
+                        } else {
+                            guard let dataString = String(data: data!, encoding: .utf8) else {
+                                result = "Error encoding"
+                                
+                                completion(result)
+                                return
+                            }
+                            print("base64Str: \(dataString)")
+                            
+                            result = dataString
+                            
+                            completion(result)
                         }
-                        print("base64Str: \(dataString)")
-                        
-                        result = dataString
                     }
                 }
             }
         }
-        
-        return result
     }
     
     func deleteGameData(fileName: String) -> Bool {

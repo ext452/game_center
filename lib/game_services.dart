@@ -32,12 +32,6 @@ class GameServices {
   ///Return `true` if operation was successful or Throw `Future.error`
   static Future<bool> get gcSignIn async {
     final bool result = await _channel.invokeMethod(GC_LOGIN);
-
-    if(result == true) {
-      return true;
-    } else {
-      return Future.error(false);
-    }
   }
 
   ///Show native leader board passing [leaderBoardID]
@@ -73,11 +67,7 @@ class GameServices {
   static Future<bool> openAchievement(String achivKey) async {
     final bool result = await _channel.invokeMethod(GC_SUBMIT_ACHIV, achivKey);
 
-    if(result == true) {
-      return true;
-    } else {
-      return Future.error(false);
-    }
+    return result;
   }
 
   ///Submit score to GameCenter by leadBoardId
@@ -96,14 +86,14 @@ class GameServices {
 
   ///Save game process to GameCenter passing [data] and [fileName] as `List`
   ///
-  ///Return `true` if process was successful or Throw `Future.error`
-  static Future<bool> saveData(String data, String fileName) async {
-    final bool result = await _channel.invokeMethod(GC_SAVE_GAME_DATA, [data, fileName]);
+  ///Return `String` error message if process was successful or Throw `Future.error`
+  static Future<String> saveData(String data, String fileName) async {
+    final String result = await _channel.invokeMethod(GC_SAVE_GAME_DATA, [data, fileName]);
 
-    if(result == true) {
-      return true;
+    if(result == "true") {
+      return result;
     } else {
-      return Future.error(false);
+      return Future.error(result);
     }
   }
 

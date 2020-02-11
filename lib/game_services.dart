@@ -32,6 +32,11 @@ class GameServices {
   ///Return `true` if operation was successful or Throw `Future.error`
   static Future<bool> get gcSignIn async {
     final bool result = await _channel.invokeMethod(GC_LOGIN);
+    if (!result) {
+      return Future.error(false);
+    } else {
+      return true;
+    }
   }
 
   ///Show native leader board passing [leaderBoardID]
@@ -74,13 +79,13 @@ class GameServices {
   ///It takes [params] as Map - {[leadBoardId], [score]}
   ///
   ///Returns `true` if operation was successful or Throw `Future.error`
-  static Future<bool> reportScore(Map<String, int> params) async {
-    final bool result = await _channel.invokeMethod(GC_SUBMIT_SCORE, params);
-    
-    if(result == true) {
-      return true;
+  static Future<String> reportScore(Map<String, int> params) async {
+    final String result = await _channel.invokeMethod(GC_SUBMIT_SCORE, params);
+
+    if (result == "true") {
+      return "Report score result: OK";
     } else {
-      return Future.error(false);
+      return Future.error(result);
     }
   }
 

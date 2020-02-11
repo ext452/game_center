@@ -33,7 +33,7 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case GC_LOGIN:
-        result(authPlayer())
+        authPlayer() {(on_ressult) in result(on_ressult)}
         
     case GC_GET_SCORE:
         result(GC_GET_SCORE)
@@ -42,12 +42,12 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
         let args = call.arguments as? NSDictionary
         
         let leaderBoardId = args?.allKeys[0] as! String
+        
         let score = args?.value(forKey: leaderBoardId) as! Int
         
-        result(saveHighScore(leadBpardId: leaderBoardId, score: score))
         
-        result(false)
         
+        saveHighScore(leadBpardId: leaderBoardId, score: score) {(on_result) in result(on_result)}
     
     case GC_SHOW_LEADERBOARD:
         let leadBoardId = call.arguments as? String
@@ -92,41 +92,46 @@ public class SwiftGameServicesPlugin: UIViewController, GKGameCenterControllerDe
   }
 
     
-    func authPlayer() -> Bool {
-        let localPlayer = GKLocalPlayer.localPlayer()
-        var result = false
-        localPlayer.authenticateHandler = {
-            (view, error) in
-            if error != nil {
-                //error
-            } else if view != nil {
-                UIApplication.shared.keyWindow?.rootViewController?.present(view!, animated: true, completion: nil)
-                result = true
-            }
-            else {
-                print(GKLocalPlayer.localPlayer().isAuthenticated)
-                result = true
-            }
-            
-        }
+    func authPlayer(completion:@escaping (Bool) -> Void) {
         
-        return result
+        let localPlayer = GKLocalPlayer.localPlayer()
+        localPlayer.authenticateHandler = {
+            view, error in
+                if error != nil {
+                    completion(false)
+                } else if view != nil {
+                    UIApplication.shared.keyWindow?.rootViewController?.present(view!, animated: true, completion: nil)
+                    completion(true)
+                } else if (GKLocalPlayer.localPlayer().isAuthenticated) {
+                    print(GKLocalPlayer.localPlayer().isAuthenticated)
+                    completion(true)
+                } else {
+                    completion(false)
+                }
+        }
     }
     
     public func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
         gameCenterViewController.dismiss(animated: true, completion: nil)
     }
     
-    func saveHighScore(leadBpardId: String, score: Int) -> Bool {
+    func saveHighScore(leadBpardId: String, score: Int, completion:@escaping (String) -> Void ) {
         if GKLocalPlayer.localPlayer().isAuthenticated {
             let scoreReporter = GKScore(leaderboardIdentifier: leadBpardId)
             scoreReporter.value = Int64(score)
-            let scoreArray: [GKScore] = [scoreReporter]
-            GKScore.report(scoreArray, withCompletionHandler: nil)
+            scoreReporter.leaderboardIdentifier = leadBpardId
             
-            return true
+            let scoreArray: [GKScore] = [scoreReporter]
+            GKScore.report([scoreReporter], withCompletionHandler: {(error: Error?) -> Void in
+                if error != nil {
+                    //error
+                    completion("Error while report score: \(String(describing: error))")
+                } else {
+                    completion("true")
+                }
+            })
         } else {
-            return false
+            completion("not authenticated!!!")
         }
     }
     
